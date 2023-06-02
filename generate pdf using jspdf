@@ -1,0 +1,43 @@
+ setDownloadloader(true)
+    if (componentRef.current) {
+      const height = componentRef.current.scrollHeight
+      html2canvas(componentRef.current, {
+        dpi: 200,
+        scale: 1.3,
+        height: height
+      })
+        .then(canvas => {
+          const pdf = new jsPDF('p', 'mm', 'a4')
+          const canvasArray = []
+          const numberOfSection = canvas.height / 1700
+          const sectionHeight = Math.floor(canvas.height / numberOfSection)
+          for (let i = 0; i < numberOfSection; i++) {
+            const sectionCanvas = document.createElement('canvas')
+            sectionCanvas.width = canvas.width
+            sectionCanvas.height = sectionHeight
+            const ctx = sectionCanvas.getContext('2d')
+            ctx.drawImage(canvas, 0, i * sectionHeight, canvas.width, sectionHeight, 0, 0, canvas.width, sectionHeight)
+            canvasArray.push(sectionCanvas)
+          }
+          for (let i = 0; i < Math.ceil(numberOfSection); i++) {
+            if (i === 0) {
+              pdf.setFontSize(10)
+              pdf.setTextColor('#377BFF')
+              // pdf.setFillColor('#e9f0ff')
+              // pdf.rect(0, 3, 300, 7, 'F')
+              pdf.textWithLink('Install Account Manager', 163, 7, { url: 'https://www.google.com/' })
+              pdf.setDrawColor('#377BFF')
+              pdf.line(163, 8, 201, 8)
+            }
+            const imgProps = pdf.getImageProperties(canvasArray[i])
+            const pdfWidth = pdf.internal.pageSize.getWidth()
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+            pdf.addImage(canvasArray[i], 'PNG', 0, 10, pdfWidth, pdfHeight)
+            if (i < Math.ceil(numberOfSection) - 1) {
+              pdf.addPage()
+            }
+          }
+          pdf.save(`${exportFileName(account)}.pdf`)
+        })
+        .finally(() => setDownloadloader(false))
+    }
